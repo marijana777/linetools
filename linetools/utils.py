@@ -200,6 +200,69 @@ def jsonify(obj, debug=False):
         print(type(obj))
     return obj
 
+class XJsonCustomEncoder(json.JSONEncoder):
+    """Support for data types that JSON default encoder
+    does not do.
+
+    This includes:
+
+        * Numpy array or number
+        * Complex number
+        * Set
+        * Bytes (Python 3)
+
+    Examples
+    --------
+    >>> import json
+    >>> import numpy as np
+    >>> from astropy.utils.misc import JsonCustomEncoder
+    >>> json.dumps(np.arange(3), cls=XJsonCustomEncoder)
+    '[0, 1, 2]'
+
+    """
+    def default(self, obj):
+        from astropy.units.core import UnitBase
+        from astropy.units import Quantity
+        import numpy as np
+        if isinstance(obj, np.number):
+            return obj.tolist()
+        elif isinstance(obj, Quantity):
+            return dict(value=obj.value, unit=obj.unit.to_string())
+        elif isinstance(obj, np.ndarray):  # Must come after Quantity
+            return obj.tolist()
+        elif isinstance(obj, (complex, np.complex)):
+            return [obj.real, obj.imag]
+        elif isinstance(obj, set):
+            return list(obj)
+        elif isinstance(obj, bytes):  # pragma: py3
+            return obj.decode()
+        elif isinstance(obj, UnitBase):
+            return obj.name
+        elif obj is u.dimensionless_unscaled:
+            obj = 'dimensionless_unit'
+        return json.JSONEncoder.default(self, obj)
+
+
+def jsonify2(obj, debug=False):
+    """ Recursively process an object so it can be serialised in json
+    format.
+
+    WARNING - the input object may be modified if it's a dictionary or
+    list!
+
+    Parameters
+    ----------
+    obj : any object
+    debug : bool, optional
+
+    Returns
+    -------
+    obj - the same obj is json_friendly format (arrays turned to
+    lists, np.int64 converted to int, np.float64 to float, and so on).
+
+    """
+    #from astropy.utils.misc import JsonCustomEncoder
+    return json.dumps(obj, cls=XJsonCustomEncoder)
 
 def savejson(filename, obj, overwrite=False, indent=None, easy_to_read=False,
              **kwargs):
