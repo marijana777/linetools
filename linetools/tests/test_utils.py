@@ -6,9 +6,30 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import pytest
 import numpy as np
+import os
+import h5py
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.table import Table
 import linetools.utils as ltu
+
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    return os.path.join(data_dir, filename)
+
+
+def test_hdf_decode():
+    hdf = h5py.File(data_path('simple.hdf5'), 'r')
+    # Simple string
+    name = ltu.hdf_decode(hdf['meta']['name'].value)
+    assert isinstance(name, str)
+    # Array of bytes
+    slist2 = ltu.hdf_decode(hdf['meta']['slist2'].value)
+    assert 'str' in slist2.dtype.name
+    # Table
+    otbl = Table(hdf['tbl']['test'].value)
+    tbl = ltu.hdf_decode(otbl, itype='Table')
+    assert isinstance(tbl.keys()[1], str)
 
 
 def test_name_from_coord():

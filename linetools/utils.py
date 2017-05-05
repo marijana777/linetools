@@ -67,6 +67,47 @@ def convert_quantity_in_dict(idict):
         return idict
 
 
+def hdf_decode(obj, itype=None):
+    """ Decode the incoming hdf5 object
+    Usually byte to str
+
+    Parameters
+    ----------
+    obj : object
+    itype : str, optional
+      Specify the incoming data type.  Only Table is currently supported
+      Code otherwise works on it automagically
+
+    Returns
+    -------
+    dobj : object
+      decoded object
+
+    """
+    if itype == 'Table':
+        from astropy.table import Table, Column
+        dobj = Table(obj)
+        # FIX STRING COLUMNS
+        for key in dobj.keys():
+            if 'bytes' in dobj[key].dtype.name:
+                ss = [hdf_decode(ii) for ii in dobj[key]]
+                # Remove
+                dobj.remove_column(key)
+                # Add back
+                dobj[key] = Column(ss)
+    else:  # Auto
+        if isinstance(obj, bytes):
+            dobj = obj.decode('utf-8')
+        elif isinstance(obj, np.ndarray):
+            if 'bytes' in obj.dtype.name:
+                dobj = np.array([iobj.decode('utf-8') for iobj in obj])
+            else:
+                dobj = obj
+        else:
+            dobj = obj
+    # Return
+    return dobj
+
 def name_from_coord(coord, precision=(2,1)):
     """ Generate a standard JXXXXXX.XX+XXXXXX.X name from a SkyCoord object
 
