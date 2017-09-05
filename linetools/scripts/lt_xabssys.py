@@ -47,7 +47,8 @@ def main(*args, **kwargs):
 
     # Read AbsSystem
     from linetools.isgm.abssystem import GenericAbsSystem
-    abs_sys = GenericAbsSystem.from_json(pargs.abssys_file)#, chk_vel=False)
+    #abs_sys = GenericAbsSystem.from_json(pargs.abssys_file)#, chk_vel=False)
+    abs_sys = GenericAbsSystem.from_json(pargs.abssys_file,chk_z=False)#, chk_vel=False) 
 
     app = QApplication(sys.argv)
 
